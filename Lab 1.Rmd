@@ -1,0 +1,66 @@
+---
+title: "Lab 1"
+author: "Kristina Arevalo"
+date: '`r format(Sys.time(), "%a %b %d %Y")`'
+output: 
+  pdf_document:
+    toc: yes 
+    toc_depth: 2
+monofont: Times New Roman
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
+```
+
+```{r,echo=FALSE}
+library(dplyr)
+library(tidyr)
+```
+
+\newpage
+
+# Written Problem
+
+In chapter 5 on regression, Abdi discusses a primary research article from 1960 by Slamecka (1960) as an example. A pdf of this article is located in the shared zotero library. Your writing assignment is as follows:
+
+-Q
+Broad Question: Does retroactive interference effect memory recall? 
+Specific Question: Does varying degrees of practice have the same effect on the recall of ? 
+
+-A
+Hypothesis: Rote retention (memorizing by repetition) of a sentence is effected by retro interference. The amount of words recalled is a direct function of the amount of practice in the original learning (OL) and an inverse in the amount of practice in interpolated learning (IL).
+Alternative: Rote retention is not effected by retro interference and the amount of words recalled is not a direct function of the amount of practice in the OL and it is not an inverse of the amount of practice in IL. 
+
+-L
+1. If rote retention is effected by retro interference, then the amount of words recalled varies directly by how much OL practice and IL practice is done. 
+2. If rote retention is not effected by retro interference, then the amount of words recalled does not vary by how much OL or IL practice is done. 
+
+-M
+Methods: 36 psychology students at the University of Vermont participated in four 40-min sessions. The first session was a practice session, followed by the RI paradigm with OL, IL, and relearning of the OL passage through serial anticipation. There were eight 20-word sentences and a 30-sec break between OL and IL practice. Participants had a combination of either 2,4, or 8 trials in the OL practice and 0,4, or 8 trials in the IL practice.
+
+-R
+Results: OL and IL acquisition was based on the number of practice trials. The number of words recalled correctly was effected significantly by RI. The recall varied based on OL practice and inversely with IL practice.
+
+-I: 
+Inference: Slamecka's hypothesis was correct. Recalling a second sentence impaired the recall of the first list, and increased as the number of IL trials increased and OL trials decreased. There is evidence to support the extenstion of generalizations related to the serial learning of unconnected materials to the serial learning of connected discourse. 
+
+
+# Coding problem
+Create a data frame that capable of representing the design, in as complete a way as you can, in the Slamecka (1960) paper.
+
+```{r}
+participants <- 1:36
+OL <- rep(c(2,4,8), 12)
+IL <- rep(c(0,4,8), each= 12)
+correct <- sample(0:20, 36, replace = TRUE)
+
+recall_data <- tibble(participants,
+                      OL,
+                      IL,
+                      correct)
+
+```
+
+
