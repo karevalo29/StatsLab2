@@ -11,17 +11,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Different Packages in R to learn about Regression
 
-When you're learning about how to use R for statistical analyses, it can be helpful to use a data set that is already installed in R. When I learned about regression, we used the 'mtcars' data set. If you want to know more about the variables in this data set just run this code ?mtcars . Before we get started, there are a few packages we need to install: 
+When you're learning about how to use R for statistical analyses, it can be helpful to use a data set that is already installed in R. We can use the 'mtcars' data set for starters. If you want to know more about the variables in this data set just run this code ?mtcars. Before we get started, there are a few packages we need to install: 
 
 ```{r}
-
-install.packages(dplyr)
-install.packages(psych)
-install.packages(jtools)
-
 library(dplyr)
 library(jtools)
+library(psych)
 library(ggplot2)
+
 ```
 
 The `jtools` package is used as a regression summary output function.
