@@ -1,0 +1,56 @@
+---
+title: "Lab 3"
+author: "Kristina Arevalo"
+date: "2/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Different Packages in R to learn about Regression
+
+When you're learning about how to use R for statistical analyses, it can be helpful to use a data set that is already installed in R. When I learned about regression, we used the 'mtcars' data set. If you want to know more about the variables in this data set just run this code ?mtcars . Before we get started, there are a few packages we need to install: 
+
+```{r}
+
+install.packages(dplyr)
+install.packages(psych)
+install.packages(jtools)
+
+library(dplyr)
+library(jtools)
+library(ggplot2)
+```
+
+The `jtools` package is used as a regression summary output function.
+
+Let's look at the data to see what variables we can work. the `head()` function will show us the first few rows of the data set along with what variables are included.
+```{r}
+mtcars %>% head()
+```
+
+Next, we should create a variable that contains our statistical model. Lets say we are interested in finding out if weight and amount of cylinders have an impact in quantifying the difference of miles per gallon (MPG) in a car. (You don't need to know anything about cars to conduct this test!)
+```{r}
+my.mod <- lm(mpg ~ wt + cyl , data = mtcars)
+```
+
+We will be using the `summ` function which prints output for a regression model similar to summary(), but formatted differently with more options. Things you should know:
+  partial corr: how much variance in IV1 is shared with DV + variance from IV2
+  part corr (semi-partial correlation): shared (unique) variance between IV1 & DV, removes IV2
+  confint: gives you confidence intervals, without it you have standard errors
+
+When we run our model this is what we see, a very nice table with our confidence intervals and partial correlation values! 
+```{r}
+summ(my.mod, digits = 3, confint = TRUE, part.corr= TRUE)
+```
+
+Another function I like to use is the `pairs.panels` function from the `psych` package. It gives you a quick visualization with a bivariate scatter plot, histograms, and the Pearson correlation as well! 
+
+```{r}
+mtcars %>% select(mpg, hp, cyl) %>% pairs.panels()
+```
+
+
+
