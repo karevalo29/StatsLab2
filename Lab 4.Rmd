@@ -1,0 +1,109 @@
+---
+title: "Lab 4"
+author: "Kristina Arevalo"
+date: '`r format(Sys.time(), "%a %b %d %Y")`'
+output: 
+  pdf_document:
+    toc: yes 
+    toc_depth: 2
+monofont: Times New Roman
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,echo=FALSE, message = FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(papaja)
+library(tibble)
+```
+
+\newpage
+# Problem 1 
+Consider the following example data for a between-subjects experiment with two groups, A and B:
+
+```{r}
+example_data <- tibble(Group = rep(c("A","B"), each = 5),
+                       DV = c(2,4,3,5,4,7,6,5,6,7))
+```
+                       
+Use R to conduct a t.test and ANOVA on this data. Then use R to prove that the results of both analyses are the same. For example, prove that the p-values are the same, and prove that the F-value and T-value are related. (3 points)
+
+```{r}
+t_test_output <- t.test(DV~Group, var.equal = TRUE, example_data)
+```
+
+```{r}
+anova_output <- aov(DV~Group,example_data) %>% summary()
+```
+
+To prove that the p-values are the same: 
+```{r}
+t_test_output$p.value
+anova_output[[1]]$`Pr(>F)`[1]
+```
+
+To show that t-value& F-value are related: 
+```{r}
+(t_test_output$statistic)^2
+anova_output[[1]]$`F value`[1]
+```
+
+\newpage
+# Problem 2
+Look at the lab on ANOVA that I wrote for our undergraduate statistics OER lab manual https://crumplab.github.io/statisticsLab/lab-8-one-way-anova.html. That lab shows an example of obtaining data from a published paper in psych science where a one-factor ANOVA was used as a part of the analysis. Load the data, conduct the ANOVA, report a ggplot of the means, and use papaja to help you write a short results section reporting the ANOVA result. (3 points).
+
+```{r}
+library(data.table)
+all_data <- read.csv("open_data/Jamesetal2015Experiment2.csv")
+
+all_data$Condition <- as.factor(all_data$Condition)
+levels(all_data$Condition) <- c("Control",
+                                "Reactivation+Tetris", 
+                                "Tetris_only",
+                                "Reactivation_only")
+```
+
+## ANOVA
+```{r}
+anova_jamesetal<- aov(Days_One_to_Seven_Number_of_Intrusions~Condition, all_data) %>% summary()
+
+anova_jamesetal
+```
+
+## Figure
+```{r}
+ggplot(all_data, aes(x= Condition, y= Days_One_to_Seven_Number_of_Intrusions, fill = Condition)) +
+  geom_bar(stat= "summary", fun = "mean", position ="dodge")+
+  geom_point()+
+  theme_classic()
+```
+
+
+## Results
+```{r}
+apa_print(anova_jamesetal)$full_result$Condition
+```
+
+A one-factor between-subjects ANOVA was conducted with Intervention type as the independent variable. We found a main effect of intervention type, `r apa_print(anova_jamesetal)$full_result$Condition`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
