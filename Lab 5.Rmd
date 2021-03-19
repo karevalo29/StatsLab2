@@ -4,6 +4,7 @@ author: "Kristina Arevalo"
 date: '`r format(Sys.time(), "%a %b %d %Y")`'
 output: 
   pdf_document:
+    latex_engine: xelatex
     toc: yes 
     toc_depth: 2
 monofont: Times New Roman
@@ -87,7 +88,7 @@ for(i in 1:1000){
 }
 ```
 
-#anova
+## anova
 ```{r}
 my.aov
 ```
@@ -100,7 +101,7 @@ ggplot(sim_data, aes(x = IV, y= DV))+
 ```
 I would reject the null because my p-value is less than .05. I would be correct in doing so because my p-value is less than my alpha level. These results would be considered significant. 
 
-## Bonus Question
+# Bonus Question
 
 In the lab we saw that F-distribution is robust to violations of the assumptions of ANOVA. For example, the simulation of the null based on a bi-modal distribution was very similar to the true F distribution. For this bonus question, show that you can “break” the F-distribution. Specifically, can you run a simulation that samples numbers from a non-normal distribution that does produce a very different looking F-distribution? (3 points)
 
