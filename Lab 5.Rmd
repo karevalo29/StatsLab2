@@ -1,5 +1,5 @@
 ---
-title: "Lab 4"
+title: "Lab 5"
 author: "Kristina Arevalo"
 date: '`r format(Sys.time(), "%a %b %d %Y")`'
 output: 
