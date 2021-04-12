@@ -1,0 +1,95 @@
+---
+title: "Lab 7"
+author: "Kristina Arevalo"
+date: '`r format(Sys.time(), "%a %b %d %Y")`'
+output: 
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes 
+    toc_depth: 2
+monofont: Times New Roman
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,echo=FALSE, message = FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(papaja)
+library(tibble)
+```
+
+\newpage
+
+# Problem 2
+Complete the 2x2 factorial lab found here https://crumplab.github.io/statisticsLab/lab-10-factorial-anova.html, up to section 10.4.8. More specifically, your task is to follow that lab exercise to load in the data, transform the data into long-format, conduct a 2x2 between subjects ANOVA, and write a short results section reporting the main effects and interaction. (3 points)
+
+## Load & Transform  data
+```{r}
+
+all_data <- read.csv("open_data/stroop_stand.csv")
+
+RTs <- c(as.numeric(unlist(all_data[,1])),
+         as.numeric(unlist(all_data[,2])),
+         as.numeric(unlist(all_data[,3])),
+         as.numeric(unlist(all_data[,4]))
+         )
+
+Congruency <- rep(rep(c("Congruent","Incongruent"),each=50),2)
+Posture <- rep(c("Stand","Sit"),each=100)
+Subject <- rep(1:50,4)
+
+stroop_df <- data.frame(Subject,Congruency,Posture,RTs)
+```
+
+## ANOVA
+```{r}
+aov_out<- aov(RTs ~ Congruency*Posture, stroop_df) %>% summary()
+aov_out
+```
+## Results
+
+We conducted a 2x2 between subjects ANOVA where Congruency and Posture were our independent variables and the dependent variable was the mean reaction time to name the color. 
+We found a main effect of Congruency, `r apa_print(aov_out)$full_result$Congruency `
+
+There was also a main effect of Posture `r apa_print(aov_out)$full_result$Posture `
+
+There was no two-way interaction between Congruency and Posture, F (1, 196) = .497, MSE = 13189.185, p < 0.481.
+
+(I couldn't get the apa print function to print the interaction results for some reason it kept coming up as an error so I just wrote it out)
+
+# Problem 4
+In the conceptual section of this lab we used an R simulation to find the family-wise type I error rate for a simple factorial design with 2 independent variables. Use an R simulation to find the family-wise type I error rate for a factorial design with 3 independent variables. (3 points)
+
+```{r}
+save_sim <- tibble()
+
+for(i in 1:1000){
+n <- 12
+factorial_data <- tibble(A = factor(rep(c("L1","L2"), each = n)),
+                         B = factor(rep(rep(c("L1","L2"), each = n/2),2)),
+                         C = factor(rep(c("L1","L2"), n)),
+                         DV = rnorm(n*2,0,1))
+
+output <- summary(aov(DV ~ A*B*C, data = factorial_data))
+
+  sim_tibble <- tibble(p_vals = output[[1]]$`Pr(>F)`[1:7],
+                       effect = c("A","B","C", "AxB","AxC", "BxC","AxBxC"),
+                       sim = rep(i,7))
+
+  save_sim <-rbind(save_sim,sim_tibble)
+}
+
+type_1 <- save_sim %>% 
+  filter(p_vals < .05) %>% 
+  group_by(sim) %>% 
+  count()
+
+dim(type_1)[1]/1000
+```
+
+
