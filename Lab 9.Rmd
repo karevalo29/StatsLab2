@@ -1,0 +1,168 @@
+---
+title: "Lab 9"
+author: "Kristina Arevalo"
+date: '`r format(Sys.time(), "%a %b %d %Y")`'
+output: 
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes 
+    toc_depth: 2
+monofont: Times New Roman
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,echo=FALSE, message = FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tibble)
+```
+
+\newpage
+
+# Problem 1
+
+Create an R script that can generate simulated data for the following repeated measures design. (2 points)
+A. The dependent variable is assumed to come from a normal distribution with mean = 0 and standard deviation = 1.
+
+B. There is one repeated measures factor with 5 levels (Down1, Down2, Control, Up1, Up2). The control group is assumed to have no effect. The Down1 and Down2 levels shift the mean down by 1 and 2 standard deviations, respectively. The Up1 and Up2 levels shift the mean up by 1 and 2 standard deviations, respectively.
+
+C. There are 6 subjects in the experiment, and they are each measured once in each condition. The 6 subjects are assumed to be different from one another (e.g., they will have different baseline means in the control condition), but they will all be influenced by the IV in the exact same way (e.g., no interaction).
+
+```{r}
+
+sim_data <- tibble(
+subjects = rep(1:6, each =5),
+IV = rep(c("Down2", "Down1", "Control", "Up1", "Up2"),6),
+DV = rnorm(6*5,c(-2,-1,0,1,2),1)
+) %>% mutate(DV = DV + rep(2:-3, each = 5))
+
+#change order of x-axis, save this code
+sim_data$IV <- factor(sim_data$IV, levels = c("Down2", "Down1", "Control", "Up1", "Up2"))
+
+sim_data$subjects <- as.factor(sim_data$subjects)
+
+ggplot(sim_data, aes(x=IV, y= DV, group = subjects))+
+  geom_point()+
+  geom_line()
+
+
+```
+
+
+# Problem 2
+Run a simulation to determine the proportion of experiments that would return a significant result for the above design. Assume that the effect of the levels of the IV are increments of .1 of a standard deviation, rather than increments of 1 as in the above design.
+
+```{r}
+save_p <- c()
+for (i in 1:1000){
+  
+sim_data <- tibble(
+subjects = rep(1:6, each =5),
+IV = rep(c("Down2", "Down1", "Control", "Up1", "Up2"),6),
+DV = rnorm(6*5,c(-.2,-.1,0,.1,.2),1)
+) %>% mutate(DV = DV + rep(rnorm(6, 0, 1), each = 5))
+
+sim_data$IV <- factor(sim_data$IV, levels = c("Down2", "Down1", "Control", "Up1", "Up2"))
+
+sim_data$subjects <- as.factor(sim_data$subjects)
+
+aov_out <- aov(DV ~ IV + Error(subjects), sim_data) %>%  summary
+save_p[i] <- aov_out[2]$`Error: Within`[[1]]$`Pr(>F)`[1]
+}
+
+length(save_p[save_p < .05])/1000
+
+```
+
+
+# Problem 3
+Demonstrate that the Godden and Baddeley example data from the textbook (19.5), which used a 2x2 repeated measures design, can be be analyzed with one-sample t-tests to return the same results. Specifically, show the one-sample t-tests for each main effect and the interaction. (2 points)
+
+```{r}
+godden_baddeley <- tribble(~Subjects,~LearningPlace,~TestingPlace,~Recall,
+        "s1","On Land","On Land",34,
+        "s2","On Land","On Land",37,
+        "s3","On Land","On Land",27,
+        "s4","On Land","On Land",43,
+        "s5","On Land","On Land",44,
+        "s1","On Land","Under Sea",18,
+        "s2","On Land","Under Sea",21,
+        "s3","On Land","Under Sea",25,
+        "s4","On Land","Under Sea",37,
+        "s5","On Land","Under Sea",34,
+        "s1","Under Sea","On Land",14,
+        "s2","Under Sea","On Land",21,
+        "s3","Under Sea","On Land",31,
+        "s4","Under Sea","On Land",27,
+        "s5","Under Sea","On Land",32,
+        "s1","Under Sea","Under Sea",22,
+        "s2","Under Sea","Under Sea",25,
+        "s3","Under Sea","Under Sea",33,
+        "s4","Under Sea","Under Sea",33,
+        "s5","Under Sea","Under Sea",42
+        )
+
+godden_baddeley <- godden_baddeley %>%
+  mutate(Subjects = as.factor(Subjects),
+         LearningPlace = as.factor(LearningPlace),
+         TestingPlace = as.factor(TestingPlace))
+```
+
+## Main Effect: Learning Place
+
+```{r}
+lp_mean <- godden_baddeley %>% 
+  group_by(Subjects, LearningPlace) %>% 
+  summarize(mean_recall = mean(Recall))
+
+t.test(mean_recall ~ LearningPlace, paired = TRUE, data = lp_mean)
+```
+
+## Main Effect: Testing Place
+```{r}
+tp_mean <- godden_baddeley %>% 
+  group_by(Subjects, TestingPlace) %>% 
+  summarize(mean_recall = mean(Recall))
+
+t.test(mean_recall ~ TestingPlace, paired = TRUE, data = tp_mean)
+```
+
+## Interaction
+```{r}
+LL <- godden_baddeley %>% 
+  filter(LearningPlace == "On Land",
+         TestingPlace == "On Land") %>% 
+  pull(Recall)
+
+LS <- godden_baddeley %>% 
+  filter(LearningPlace == "On Land",
+         TestingPlace == "Under Sea") %>% 
+  pull(Recall)
+
+SL <- godden_baddeley %>% 
+  filter(LearningPlace == "Under Sea",
+         TestingPlace == "On Land") %>% 
+  pull(Recall)
+
+SS <- godden_baddeley %>% 
+  filter(LearningPlace == "Under Sea",
+         TestingPlace == "Under Sea") %>% 
+  pull(Recall)
+
+
+t.test((LL - LS) - (SL - SS), mu = 0)
+```
+
+
+
+
+
+
+
+
+
