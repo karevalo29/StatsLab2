@@ -1,0 +1,226 @@
+---
+title: "Semester Project"
+author: "Kristina Arevalo"
+date: '`r format(Sys.time(), "%a %b %d %Y")`'
+output: 
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+
+# Overview 
+
+In this lab, I will go over what to do when you have collected your own data, or are analyzing a data set that has been previously collected. We will go over how to clean the data (aka Data wrangling), conduct a statistical analyses and create your very own figure that you can use for a manuscript. I hope this lab helps those who are fearful of using R for their own analyses! 
+
+# Prepare for Analysis 
+
+First, we want to load the packages we will need, if you don't have these installed, do so first with the 'install.packages()' function and make sure to put the package title with quotation marks. 
+
+There are many free and open data sets available in R, we will be using the carData package to access a data set called Salaries. This data set is from the 2008-09 academic salary for Assistant Professors, Associate Professors and Professors in a college in the U.S. The data was collected as part of the on-going effort of the college's administration to monitor salary differences between male and female faculty members. 
+
+```{r, message = FALSE}
+
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(jtools)
+library(xtable)
+library(kableExtra)
+library(carData)
+library(summarytools)
+
+```
+
+This is how we will save and access the data but if you had conducted your own study and collected your own data you would download the data as an excel file (I prefer csv format), then you would save the file in the same folder as the R project you will be working in and use the code 
+my.data <- read.csv("XXX.csv")
+
+```{r}
+my.data <- carData::Salaries
+```
+
+If you haven't finished collecting data and you want to get a head start on cleaning your data, you can use the 'dim()' function, this allows you to continuously import new data and R will adjust to it so you don't have to keep changing your code for variables. Sometimes when you import your data, there are extra rows on the top, things like the question number, the question itself or something random, like in Qualtrics theres a row that says ImportId. I like to keep my data clear and concise so I don't need to keep those rows, with the 'dim()' function you could remove these rows. You would set it up as:
+
+new_data_name <- dataname[starting_rownumber:dim(dataname)[1],]
+
+```{r}
+
+my.data.example<- my.data[3:dim(my.data)[1],]
+
+```
+
+Here is just an example of how it would look. This basically says, lets start at row 3 and extend the dimension of our data set to however many rows there are in the my.data file and start with column 1, as in do not remove any of the columns.  
+
+## View Data
+The 'head()' function prints the first 6 values of the dataset, this gives you a quick view of the variables you will be working with. You can also use the 'dfSummary()' function from the summarytools package for a quick clean view of the data as well. 
+
+```{r}
+my.data %>% head()
+dfSummary(my.data)
+```
+
+# Clean Data
+
+## Renaming Variables
+When you download your data from a web-based survey platform (i.e Qualtrics, google forms, surveymonkey) the way your variables (column names) look may not be easy to interpret. I find it best to rename the columns to make data analysis simple and easy for anyone to understand. Conveniently, if you want to rename something you use the 'rename()' function. The new column name should be on the left side of the equal sign, and the old column name should be on the right side. To permanently save your data with the new names, you must save it as a new data set. Note, you can use the same name (my.data) but as a beginner, it is easier to save it under a new name (my.data1) so if you make a mistake down the line, it will be easier to fix. 
+
+```{r}
+my.data1 <- my.data %>%
+  rename(Gender = sex,
+         Years.Worked = yrs.service,
+         Salary = salary)
+```
+
+
+## Inspect Data for Problems
+The 'class()' function tells you what "type" your variable saved as when it was converted into R. This is important because some analyses won't run if they are not in the right form (numeric/integer = ratio or interval, factor = nominal ) To use this function, you want to access the specific variable/column within the data set with the $. 
+
+```{r}
+class(my.data1$Years.Worked)
+class(my.data1$Gender)
+class(my.data1$Salary)
+
+```
+
+If your variable isn't in the right class you use the as.numeric or as.character to turn the variable you put inside of it into what you'd like it to be. Here we will change from integer to numeric (although I believe that you don't need to do this, but for the sake of the example). Then you check the class again to make sure it worked. 
+note: if you need to turn a factor variable into a numeric variable, you have to use this code: as.numeric(as.character(my.data$my.variable)). 
+
+```{r,message = FALSE}
+
+my.data1$Salary<- as.numeric(my.data1$Salary)
+class(my.data1$Salary)
+
+```
+
+If you have a data set of hundreds of people it would take hours to comb through each column for each participant to see their varied responses. It also helps to see if there are any NAs present, the NA represents a missing answer. We can use the 'unique()' function to quickly sum all the different levels of responses in a column. 
+```{r}
+my.data1$Gender %>% unique()
+my.data1$Years.Worked %>% unique()
+my.data1$Salary%>% unique()
+```
+
+## Mutating Variables 
+
+Lets say you download your data and the responses are written as "Strongly Agree," "Agree" etc. Or you're using a measure where some of the responses are reverse coded. We can do that in R too! Lets try it with the Gender category. It seems daunting, but we basically create our own function that allows us to replace within certain columns. The best part of this is that you can use this for any data set, just copy the code and punch in your own info. 
+
+What you need to change to fit your own data is the data set names, what goes inside the 'vars()' doesn't have to be just one variable you can use (x:xx) to represent how ever many columns you need to change. You can use the column name or the column number. 
+
+```{r}
+my.data2 <- my.data1 %>% 
+  mutate_at(vars("Gender"), 
+            function(x) 
+              recode(x,"Male" = 0, 
+                     "Female" = 1)) 
+```
+
+We can also create a composite measure in R too! If you are using something like the CES-D Depression scale, each column would represent a question, but we want to know what each participants actual score on the scale is. We could use the 'rowwise()' and 'mutate()' function to create a new column to represent that. Here lets pretend we want to see if theres a difference between the yrs since phd from yrs worked.
+
+```{r}
+my.data3 <- my.data2%>% 
+  rowwise() %>% 
+  mutate(diff_btwn_yrs = diff(c_across(4:3)))
+```
+
+If the columns you want to combine aren't next to each other, you can also use this style as well but you would need to use the actual column name here. 
+
+```{r}
+my.data4 <- my.data2 %>% 
+  rowwise() %>% 
+  mutate(diff_btwn_yrs = ((yrs.since.phd) - (Years.Worked)))
+```
+
+You can compare my.data3 to my.data4 and see that both options work. Note that when you create a compoisite measure you will need to divide by the number of questions and you can do this by just adding "/#)" to the end but within the mutate function like:  
+mutate(diff_btwn_yrs = ((yrs.since.phd) - (Years.Worked))/2)
+
+# Exploring the Data
+
+## Descriptives
+
+
+Usually the first step I take is to look at the descripitives, I want to know the means and standard deviations of my variables. I can use an xtable (from the xtable package) to make it APA style as well. Note we are returning to my.data1 because this data is already clean and clear. 
+
+```{r, results = "asis", echo=FALSE, message=FALSE}
+
+my.table <- my.data1 %>%
+  group_by(Gender) %>%
+  summarize(Mean.Salary = mean(Salary, na.rm= TRUE), 
+            SD.Salary = sd(Salary, na.rm =TRUE), 
+            Mean.Years.Worked = mean(Years.Worked, na.rm= TRUE), 
+            SD.Years.Worked = sd(Years.Worked, na.rm =TRUE))
+
+my.xtable <- xtable(my.table,
+                 caption= "Descriptives",
+                 digits = 2,
+                 align= "lccccc")
+
+print.xtable(my.xtable,
+             comment= FALSE,
+            caption.placement = "top",
+            booktabs = TRUE)
+
+```
+
+
+## Visualization Example
+
+This is an example of a visualization we can create. Violin plots are used to look at the distribution and are good for making comparisons to show each group's density curves. Things to note, within the 'geom_violin()' function, alpha represents the opaqueness within the violin plot, and size represents the thickness of the line around the violin plot. 
+
+```{r, echo = FALSE, message= FALSE}
+  
+ggplot(my.data1, aes(x = Years.Worked, y = Salary, fill = Gender)) +
+  geom_violin(alpha = .5, size = 1, position = "identity") +
+  labs(x = "Years Worked", y = "Salary", title = "Professors Salaries") +
+  theme_nice()
+```
+
+# Generalization Problem
+
+Now you can run our own analysis! Yayyy!! Lets use everything we've learned in stats to use the data to create your own hypothesis, run your own analysis, interpret and explain your analysis, and then create a figure that can be used in a manuscript. 
+
+## Hypothesis
+  Based on this data set we can look at some predictor variables, gender and years worked, and the outcome variable is salary. I expect to see a positive linear relationship between salary & years worked and a stronger relationship between males and salary/years worked, i.e I expect men to have a higher salary then women despite the amount of years worked. 
+
+## Analyses
+```{r, results= "asis", echo= FALSE}
+
+my.reg <- lm(Salary ~ Gender + Years.Worked, data = my.data1)
+sum.reg<- my.reg %>% summ(confint= TRUE, digits=2, part.corr= TRUE)
+
+my.table2 <- 
+  sum.reg$coeftable  %>% as.data.frame
+
+reg.xtable <- xtable(my.table2, 
+                     caption= "My Linear Regression",
+                     digits = 2,
+                     align= "lccccccc")
+
+print.xtable(reg.xtable,
+             comment= FALSE,
+             caption.placement = "top",
+             table.placement= "H",
+             booktabs = TRUE)
+
+```
+
+A linear regression revealed that gender (male or female) and amount of years worked predict a significant amount of your nine-month salary. The p-value here represents the probability of observing a relationship between salary and gender this large or larger due to sampling variability if the null were true. The years you work had a more siginifcant p-value, but gender was also significant. The confidence interval tells us that, with the sample size and with a confidence level of 95%, 95 out of 100 samples will contain the true population level relationship between gender and salary. Because years worked does not contain a CI of 0, I am more certain that the amount of years worked is a better predictor of the salary you earn. Both variables share variance explained both partially and semi-partially, but years worked again, shows more variance explained in the salary earned. Overall, years worked has a stronger relationship, gender also has an effect, but together they do not based on a R2 of 0.12. 
+
+```{r, echo= FALSE}
+
+ ggplot(my.data1, aes(x=Years.Worked, y= Salary, fill= Gender)) +
+  geom_smooth(formula = y~x, method = "lm" ) + 
+  geom_point()+
+  facet_wrap(facets= "Gender", nrow=1)+
+    theme_classic() +
+  theme(text = element_text(family = "Times"), legend.position = "none") +
+    labs(x = "Years Worked", y = "Salary", title = "Professor's Salary")
+
+
+```
+
+Based on this graph, you can see that on the x-axis is the amount of years the professor worked, the y-axis shows how much that professor earns and it is divided into two graphs, female and male professors. As you can see, female professors make less money then their male counterparts for the same amount of years worked! For 20 years of working, the highest salary a female professor in this dataset has made was about 150,000 but for a male professor working for 20 years, the highest pay is almost 200,000! Tragic. However, you can also see that the majority of the sample was male professors so maybe, lets hope that our higher-earning female professors were just too busy to take part in this study!
